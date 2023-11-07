@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -9,6 +10,14 @@ class ReceiptModel:
         self.amount = amount
         self.date = date
         self.items = items
+
+
+
+# ========================================= Service Layer
+
+
+
+# =========================================
 
 
 # API to get receipt
@@ -33,11 +42,27 @@ def delete_receipt(receiptNumber):
     return jsonify({"message": f"Receipt {receiptNumber} deleted"})
 
 # API to extract data from image
-@app.route('/extract', methods=['POST'])
-def extract_data_from_image():
-    if 'image' in request.files:
-        # Logic to extract data from the image
-        print(request.files)
+@app.route('/extract/<userId>', methods=['POST'])
+def extract_data_from_image(userId):
+    if 'file' in request.files:
+        # store file to server
+        file = request.files["file"]
+        if file.filename == "":
+            return "No selected file",400
+        
+        timeStamp=datetime.now().isoformat()
+        fileName=file.filename+"-"+timeStamp
+        file.save('files/'+fileName)
+
+        # TODO: call python function
+        mlResponse={"dummy":123}
+        extractedData={"userId":userId,"fileName":fileName,"timeStamp":timeStamp,"fileDump":mlResponse}
+        print(extractedData)
+        print(extractedData["userId"])
+
+        # TODO: dump to postgres
+
+
         return jsonify({"message": "Data extracted from the image"})
     else:
         return jsonify({"error": "No image found in the request"}), 400

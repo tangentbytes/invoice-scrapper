@@ -12,7 +12,7 @@ API: /receipt/<receiptNumber>
 # extractDataFromImage(image:File)
 
 METHOD: POST
-API: /extract
+API: /extract/<userId>
 BODY(formData): {image: ....}
 
 # saveReceipt(receiptData:ReceiptModel)
