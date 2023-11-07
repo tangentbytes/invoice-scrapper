@@ -7,7 +7,7 @@ from typing import Any
 
 app = Flask(__name__)
 
-# database connection
+# database connection #TODO: move to instance/config file ==> to hide secrets
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:mysecretpassword@localhost/postgres'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
