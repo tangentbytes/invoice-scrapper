@@ -1,16 +1,37 @@
 from flask import Flask, request, jsonify
 from datetime import datetime
+from flask_sqlalchemy import SQLAlchemy
+from dataclasses import dataclass
+from typing import Any
+
 
 app = Flask(__name__)
 
-# Sample ReceiptModel class (you should define this according to your requirements)
-class ReceiptModel:
-    def __init__(self, receipt_number, amount, date, items):
-        self.receipt_number = receipt_number
-        self.amount = amount
-        self.date = date
-        self.items = items
+# database connection
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:mysecretpassword@localhost/postgres'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# 
+db=SQLAlchemy(app)
+app.app_context().push()
+
+
+# Define the model representing your PostgreSQL table
+@dataclass
+class FileData(db.Model):
+    __tablename__ = 'file_data'
+
+    id: int
+    userId:str 
+    fileName:str
+    timeStamp:str
+    fileDump:Any
+
+    id = db.Column(db.Integer, primary_key=True)
+    userId = db.Column(db.String)
+    fileName = db.Column(db.String)
+    timeStamp = db.Column(db.String)
+    fileDump = db.Column(db.JSON)
 
 
 # ========================================= Service Layer
@@ -23,16 +44,24 @@ class ReceiptModel:
 # API to get receipt
 @app.route('/receipt/<userId>', methods=['GET'])
 def get_receipt(userId):
-    date = request.args.get('date')
+    timestamp = request.args.get('date')
     # Implement logic to fetch receipt for the given user and date
     # For demonstration, let's just return a sample response
 
-    if date:
-        # Logic to fetch receipt by user and date
-        return jsonify({"message": f"Retrieving receipt for User ID: {userId} on {date}"})
+    if timestamp:
+        # Fetch data by timestamp and user ID
+        data = FileData.query.filter_by(userId=userId, timeStamp=timestamp).first()
+        if data:
+            return jsonify(data)  # Assuming you have a serialize method in your model
+        else:
+            return jsonify({'message': 'Data not found for provided userId and timestamp'})
     else:
-        # Logic to fetch receipt by user without date
-        return jsonify({"message": f"Retrieving receipt for User ID: {userId}"})
+        # Fetch data only by user ID
+        data = FileData.query.filter_by(userId=userId).all()
+        if data:
+            return jsonify(data)  # Assuming you have a serialize method in your model
+        else:
+            return jsonify({'message': 'No data found for the provided userId'})
 
 # API to delete receipt
 @app.route('/receipt/<receiptNumber>', methods=['DELETE'])
@@ -57,13 +86,18 @@ def extract_data_from_image(userId):
         # TODO: call python function
         mlResponse={"dummy":123}
         extractedData={"userId":userId,"fileName":fileName,"timeStamp":timeStamp,"fileDump":mlResponse}
-        print(extractedData)
-        print(extractedData["userId"])
 
-        # TODO: dump to postgres
+        new_file_data = FileData(
+            userId=userId,
+            fileName=fileName,
+            timeStamp=timeStamp,
+            fileDump=mlResponse
+        )
 
+        db.session.add(new_file_data)
+        db.session.commit()
 
-        return jsonify({"message": "Data extracted from the image"})
+        return jsonify(new_file_data)
     else:
         return jsonify({"error": "No image found in the request"}), 400
 
@@ -92,3 +126,4 @@ def edit_receipt():
 
 if __name__ == '__main__':
     app.run(debug=True)
+    db.create_all()  # Create tables based on the models
