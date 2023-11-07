@@ -64,11 +64,18 @@ def get_receipt(userId):
             return jsonify({'message': 'No data found for the provided userId'})
 
 # API to delete receipt
-@app.route('/receipt/<receiptNumber>', methods=['DELETE'])
-def delete_receipt(receiptNumber):
-    # Implement logic to delete receipt by receipt number
-    # For demonstration, let's just return a sample response
-    return jsonify({"message": f"Receipt {receiptNumber} deleted"})
+@app.route('/receipt/<receiptId>', methods=['DELETE'])
+def delete_receipt(receiptId):
+    if receiptId:
+        file_data = FileData.query.filter_by(fileName=receiptId).first()
+        if file_data:
+            db.session.delete(file_data)
+            db.session.commit()
+            return jsonify({'message': f'Data with fileName {receiptId} deleted successfully'})
+        else:
+            return jsonify({'message': f'No data found for fileName {receiptId}'})
+    else:
+        return jsonify({'message': 'Please provide fileName to delete data'})
 
 # API to extract data from image
 @app.route('/extract/<userId>', methods=['POST'])
@@ -105,10 +112,20 @@ def extract_data_from_image(userId):
 @app.route('/receipt', methods=['POST'])
 def save_receipt():
     if request.json:
-        receipt_data = request.json
-        # Logic to save the receipt data
-        # For demonstration, let's just add to the receipts list
-        print(receipt_data)
+        attributes=request.get_json()
+
+        new_file_data = FileData(
+            userId=attributes["userId"],
+            fileName=attributes["fileName"],
+            timeStamp=datetime.now().isoformat(),
+            fileDump=attributes["fileDump"]
+        )
+
+        db.session.add(new_file_data)
+        db.session.commit()
+
+        return jsonify(new_file_data)
+        
         return jsonify({"message": "Receipt saved"})
     else:
         return jsonify({"error": "No data received"}), 400
@@ -116,13 +133,24 @@ def save_receipt():
 # API to edit receipt
 @app.route('/receipt', methods=['PUT'])
 def edit_receipt():
-    if request.json:
-        receipt_data = request.json
-        # Logic to edit the receipt data
-        # For demonstration, let's just return the edited data
-        return jsonify({"message": "Receipt edited", "edited_receipt": receipt_data})
+    attributes=request.get_json()
+    user_id = attributes['userId']
+    file_name = attributes['fileName']
+    attributes_to_update = request.get_json()
+
+    if user_id and file_name and attributes_to_update:
+        file_data = FileData.query.filter_by(userId=user_id, fileName=file_name).first()
+        if file_data:
+            for key, value in attributes_to_update.items():
+                if hasattr(file_data, key):
+                    setattr(file_data, key, value)
+
+            db.session.commit()
+            return jsonify({'message': 'FileData updated successfully'})
+        else:
+            return jsonify({'message': 'Data not found for provided userId and fileName'})
     else:
-        return jsonify({"error": "No data received"}), 400
+        return jsonify({'message': 'Please provide userId, fileName, and attributes to update'})
 
 if __name__ == '__main__':
     app.run(debug=True)
