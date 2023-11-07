@@ -34,13 +34,6 @@ class FileData(db.Model):
     fileDump = db.Column(db.JSON)
 
 
-# ========================================= Service Layer
-
-
-
-# =========================================
-
-
 # API to get receipt
 @app.route('/receipt/<userId>', methods=['GET'])
 def get_receipt(userId):
