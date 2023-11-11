@@ -3,7 +3,8 @@ from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from dataclasses import dataclass
 from typing import Any
-
+from docquery import document, pipeline
+p = pipeline('document-question-answering')
 
 app = Flask(__name__)
 
@@ -80,12 +81,28 @@ def extract_data_from_image(userId):
             return "No selected file",400
         
         timeStamp=datetime.now().isoformat()
-        fileName=file.filename+"-"+timeStamp
+        fileName=timeStamp + file.filename
         file.save('files/'+fileName)
 
         # TODO: call python function
-        mlResponse={"dummy":123}
-        extractedData={"userId":userId,"fileName":fileName,"timeStamp":timeStamp,"fileDump":mlResponse}
+        doc = document.load_document("img2.jpg")
+        lsit = ['InvoiceNumber', 'total', 'date', 'merchant']
+        data = {}
+        questions = [
+            "What is the invoice number?",
+            "What is the invoice total with currency?",
+            "What is the date of purchase",
+            "What is the Merchant name"
+        ]
+
+        for i,question in enumerate(questions):
+            result = p(question=question, **doc.context)[0]
+            print(i,question)    
+            data[lsit[i]] = result['answer']
+
+        print(data)
+        mlResponse=data 
+        # extractedData={"userId":userId,"fileName":fileName,"timeStamp":timeStamp,"fileDump":mlResponse}
 
         new_file_data = FileData(
             userId=userId,

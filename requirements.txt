@@ -13,3 +13,6 @@ SQLAlchemy==2.0.23
 typing_extensions==4.8.0
 Werkzeug==3.0.1
 zope.interface==6.1
+docquery
+blinker==1.7.0
+pydantic==1.10.13
