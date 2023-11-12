@@ -161,17 +161,14 @@ def save_receipt():
 @app.route('/receipt', methods=['PUT'])
 def edit_receipt():
     attributes=request.get_json()
-    user_id = attributes['userId']
-    file_name = attributes['fileName']
-    attributes_to_update = request.get_json()
+    receiptId = attributes['id']
+    attributes_to_update = attributes['receipt']
 
-    if user_id and file_name and attributes_to_update:
-        file_data = FileData.query.filter_by(userId=user_id, fileName=file_name).first()
+    if receiptId:
+        file_data = FileData.query.filter_by(id=receiptId).first()
         if file_data:
-            for key, value in attributes_to_update.items():
-                if hasattr(file_data, key):
-                    setattr(file_data, key, value)
-
+            setattr(file_data, "fileDump", attributes_to_update)
+            
             db.session.commit()
             return jsonify({'message': 'FileData updated successfully'})
         else:
