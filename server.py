@@ -75,7 +75,7 @@ def get_receipt(userId):
 @app.route('/receipt/<receiptId>', methods=['DELETE'])
 def delete_receipt(receiptId):
     if receiptId:
-        file_data = FileData.query.filter_by(fileName=receiptId).first()
+        file_data = FileData.query.filter_by(id=receiptId).first()
         if file_data:
             db.session.delete(file_data)
             db.session.commit()
